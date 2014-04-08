@@ -4,6 +4,8 @@ Rally-Export-CustomFields
 
 A simple Ruby Script that uses rally_api to query Custom Field attributes for all Artifact Types in a specified Rally Workspace.
 
+![Rally-Export-CustomFields](https://raw.githubusercontent.com/markwilliams970/Rally-Export-CustomFields/master/img/screenshot1.png)
+
 Requirements:
 
 1. Tested with Ruby 1.9.3
