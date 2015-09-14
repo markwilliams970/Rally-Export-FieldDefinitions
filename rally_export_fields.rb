@@ -30,6 +30,8 @@ $wsapi_version                                 =  "1.43"
 
 $my_delim                                      = "\t"
 
+$file_encoding                                 = 'UTF-8'
+
 
 # Load (and maybe override with) my personal/private variables from a file...
 my_vars= File.dirname(__FILE__) + "/my_vars.rb"
@@ -41,7 +43,6 @@ begin
     config[:username]                          = $rally_username
     config[:password]                          = $rally_password
     config[:workspace]                         = $rally_workspace
-    config[:project]                           = $rally_project
     config[:version]                           = $wsapi_version
 
     @rally = RallyAPI::RallyRestJson.new(config)
@@ -64,10 +65,18 @@ begin
     column_headers                             = ["ArtifactType", "TypeDefOID",
                                                     "AttrDefOID", "AttrDefName",
                                                     "AttrDefType", "Hidden", "Required",
-                                                    "AllowedValues"]
+                                                    "Custom","AllowedValues"]
+
+    $output_fields = %w{ArtifactType TypeDefOID AttrDefOID AttrDefName AttrDefType Hidden Required Custom AllowedValues}
+
     column_header_string                       = column_headers.join($my_delim)
 
-    puts column_header_string
+    # puts column_header_string
+
+    puts "Summarizing field definitions for workspace: #{$rally_workspace}..."
+
+    summary_csv = CSV.open($output_filename, "wb", {:col_sep => $my_delim, :encoding => $file_encoding})
+    summary_csv << $output_fields
 
     artifact_types.each do | this_type |
 
@@ -109,20 +118,48 @@ begin
                     "allowed" => allowed_values
                 }
                 allowed_values_string = allowed_values.to_s.gsub("\"","")
-                if this_attribute_def_iscustom
-                    output_string              = "#{this_type}#{$my_delim}"
-                    output_string              += "#{this_typedef_objectid}#{$my_delim}"
-                    output_string              += "#{this_attribute_def_objectid}#{$my_delim}"
-                    output_string              += "#{this_attribute_def_name}#{$my_delim}"
-                    output_string              += "#{this_attribute_symbol}#{$my_delim}"
-                    output_string              += "#{this_attribute_def_hidden}#{$my_delim}"
-                    output_string              += "#{this_attribute_def_required}#{$my_delim}"
-                    output_string              += "#{allowed_values_string}#{$my_delim}"
 
-                    puts output_string
+                output_string              = "#{this_type}#{$my_delim}"
+                output_string              += "#{this_typedef_objectid}#{$my_delim}"
+                output_string              += "#{this_attribute_def_objectid}#{$my_delim}"
+                output_string              += "#{this_attribute_def_name}#{$my_delim}"
+                output_string              += "#{this_attribute_symbol}#{$my_delim}"
+                output_string              += "#{this_attribute_def_hidden}#{$my_delim}"
+                output_string              += "#{this_attribute_def_required}#{$my_delim}"
+                output_string              += "#{this_attribute_def_iscustom}#{$my_delim}"
+                output_string              += "#{allowed_values_string}#{$my_delim}"
+
+                output_record              = []
+                output_record              << this_type
+                output_record              << this_typedef_objectid
+                output_record              << this_attribute_def_objectid
+                output_record              << this_attribute_def_name
+                output_record              << this_attribute_symbol
+                output_record              << this_attribute_def_hidden
+                output_record              << this_attribute_def_required
+                output_record              << this_attribute_def_iscustom
+                output_record              << allowed_values_string
+
+                case $mode
+                when :custom_only
+                    if this_attribute_def_iscustom then 
+                        # puts output_string
+                        summary_csv << output_record
+                    end
+                when :standard_only
+                    if !this_attribute_def_iscustom then
+                        # puts output_string
+                        summary_csv << output_record
+                    end
+                when :all_fields
+                    # puts output_string
+                    summary_csv << output_record
                 end
             end
         end
         artifact_hash[this_type] = field_hash
     end
+
+    puts "Done!"
+
 end
