@@ -62,12 +62,12 @@ begin
 
     artifact_hash = {}
 
-    column_headers                             = ["ArtifactType", "TypeDefOID",
+    column_headers                             = ["Workspace", "ArtifactType", "TypeDefOID",
                                                     "AttrDefOID", "AttrDefName",
                                                     "AttrDefType", "Hidden", "Required",
                                                     "Custom","AllowedValues"]
 
-    $output_fields = %w{ArtifactType TypeDefOID AttrDefOID AttrDefName AttrDefType Hidden Required Custom AllowedValues}
+    $output_fields = %w{Workspace ArtifactType TypeDefOID AttrDefOID AttrDefName AttrDefType Hidden Required Custom AllowedValues}
 
     column_header_string                       = column_headers.join($my_delim)
 
@@ -95,6 +95,7 @@ begin
             attribute_defs                     = this_typedef["Attributes"]
             attribute_defs.each do | this_attribute_def |
 
+                this_attribute_def_workspace   = this_typedef["Workspace"]
                 this_attribute_def_objectid    = this_attribute_def["ObjectID"]
                 this_attribute_def_name        = this_attribute_def["Name"]
                 this_attribute_def_type        = this_attribute_def["AttributeType"]
@@ -119,7 +120,8 @@ begin
                 }
                 allowed_values_string = allowed_values.to_s.gsub("\"","")
 
-                output_string              = "#{this_type}#{$my_delim}"
+                output_string              = "#{this_attribute_def_workspace}#{$my_delim}"
+                output_string              += "#{this_type}#{$my_delim}"
                 output_string              += "#{this_typedef_objectid}#{$my_delim}"
                 output_string              += "#{this_attribute_def_objectid}#{$my_delim}"
                 output_string              += "#{this_attribute_def_name}#{$my_delim}"
@@ -130,6 +132,7 @@ begin
                 output_string              += "#{allowed_values_string}#{$my_delim}"
 
                 output_record              = []
+                output_record              << this_attribute_def_workspace
                 output_record              << this_type
                 output_record              << this_typedef_objectid
                 output_record              << this_attribute_def_objectid

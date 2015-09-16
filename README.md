@@ -36,4 +36,4 @@ Then run the script:
 
     ruby rally_export_fields.rb
 
-The script will by default prepare a Tab-Delimited text file that you can open with Excel, delineating the Custom Fields for your Rally Workspace.
+The script will by default prepare a Tab-Delimited text file that you can open with Excel, delineating the Field definitions for your Rally Workspace.
