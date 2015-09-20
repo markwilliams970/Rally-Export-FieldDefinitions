@@ -104,7 +104,7 @@ begin
 
                 typedef_query                          = RallyAPI::RallyQuery.new()
                 typedef_query.type                     = :typedefinition
-                typedef_query.workspace                = @rally.rally_default_workspace
+                typedef_query.workspace                = this_workspace
                 typedef_query.query_string             = "(ElementName = \"#{this_type}\")"
 
                 type_definitions                       = rally_workspace_connection.find(typedef_query)
