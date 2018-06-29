@@ -25,12 +25,19 @@ $rally_url                                     =  "https://rally1.rallydev.com"
 $rally_username                                =  "user@company.com"
 $rally_password                                =  "topsecret"
 $rally_workspace                               =  "My Workspace"
-$rally_project                                 =  "My Project"
-$wsapi_version                                 =  "1.43"
+$wsapi_version                                 =  "v2.0"
 
-$my_delim                                      = "\t"
+$my_delim                                      = ","
 
 $file_encoding                                 = 'UTF-8'
+
+# Mode:
+# :custom_only   -> Exports Custom Field definitions Only
+# :standard_only -> Exports Standard Field definitions Only
+# :all_fields    -> Exports All field definitions
+$mode = :custom_only
+
+$output_filename = "exported_field_definitions.csv"
 
 
 # Load (and maybe override with) my personal/private variables from a file...
@@ -54,11 +61,13 @@ begin
     attribute_symbol_by_type["BOOLEAN"]        = :boolean
     attribute_symbol_by_type["DATE"]           = :date
     attribute_symbol_by_type["DECIMAL"]        = :decimal
-    attribute_symbol_by_type["DROPDOWN"]       = :dropdown
+    attribute_symbol_by_type["DROP_DOWN"]      = :dropdown
     attribute_symbol_by_type["INTEGER"]        = :integer
     attribute_symbol_by_type["STRING"]         = :string
     attribute_symbol_by_type["TEXT"]           = :text
     attribute_symbol_by_type["WEB_LINK"]       = :weblink
+    attribute_symbol_by_type["MULTI_VALUE"]    = :multivalue
+    attribute_symbol_by_type["USER"]           = :user
 
     artifact_hash = {}
 
@@ -98,7 +107,7 @@ begin
                 this_attribute_def_workspace   = this_typedef["Workspace"]
                 this_attribute_def_objectid    = this_attribute_def["ObjectID"]
                 this_attribute_def_name        = this_attribute_def["Name"]
-                this_attribute_def_type        = this_attribute_def["AttributeType"]
+                this_attribute_def_type        = this_attribute_def["RealAttributeType"]
                 this_attribute_def_hidden      = this_attribute_def["Hidden"]
                 this_attribute_def_required    = this_attribute_def["Required"]
                 this_attribute_def_iscustom    = this_attribute_def["Custom"]
@@ -108,9 +117,6 @@ begin
                     this_value = attribute_def_value['StringValue']
                     if !this_value.eql?("") then allowed_values.push(this_value) end
                 end
-                if allowed_values.length > 0 && this_attribute_def_type == "STRING"
-                    this_attribute_def_type = "DROPDOWN"
-                end
 
                 this_attribute_symbol = attribute_symbol_by_type[this_attribute_def_type]
 
@@ -119,6 +125,10 @@ begin
                     "allowed" => allowed_values
                 }
                 allowed_values_string = allowed_values.to_s.gsub("\"","")
+
+if this_type == "HierarchicalRequirement" then
+    this_type = "UserStory"
+end
 
                 output_string              = "#{this_attribute_def_workspace}#{$my_delim}"
                 output_string              += "#{this_type}#{$my_delim}"
