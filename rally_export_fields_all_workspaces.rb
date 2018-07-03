@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 # Copyright (c) 2013 Rally Software Development
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -24,9 +25,9 @@ require 'csv'
 $rally_url                                     =  "https://rally1.rallydev.com"
 $rally_username                                =  "user@company.com"
 $rally_password                                =  "topsecret"
+$rally_api_key                                 =  '_pX.......................................nM'
 $rally_workspace                               =  "My Workspace"
-$rally_project                                 =  "My Project"
-$wsapi_version                                 =  "1.43"
+$wsapi_version                                 =  "v2.0"
 
 $my_delim                                      = "\t"
 
@@ -42,10 +43,28 @@ begin
     config                                     = {:base_url => "#{$rally_url}/slm"}
     config[:username]                          = $rally_username
     config[:password]                          = $rally_password
+    config[:api_key]                           = $rally_api_key
     config[:workspace]                         = $rally_workspace
     config[:version]                           = $wsapi_version
 
-    @rally = RallyAPI::RallyRestJson.new(config)
+    puts "Connecting to Rally:"
+    puts "\t  :base_url : #{config[:base_url]}"
+    puts "\t  :username : #{config[:username]}"
+    hidden_apikey = config[:api_key][0..4] + config[:api_key][5..-5].gsub(/./,'.') + config[:api_key][-4,4]
+    puts "\t  :api_key  : #{hidden_apikey}"
+    puts "\t  :workspace: #{config[:workspace]}"
+    puts "\t  :version  : #{config[:version]}"
+
+    begin
+        @rally = RallyAPI::RallyRestJson.new(config)
+        puts "Connected:"
+        puts "\tSubscription: #{@rally.rally_default_workspace.rally_object['Subscription']['_refObjectName']}"
+        puts "\tWorkspace   : #{@rally.rally_workspace_name}"
+    rescue Exception => ex
+        puts "ERROR: #{ex.message}"
+        puts "       Cannot connect to Rally"
+        raise "       Problem connecting to Rally at: '#{config[:base_url]}'"
+    end
 
     subscription_query                         = RallyAPI::RallyQuery.new()
     subscription_query.type                    = :subscription
@@ -69,38 +88,42 @@ begin
     summary_csv = CSV.open($output_filename, "wb", {:col_sep => $my_delim, :encoding => $file_encoding})
     summary_csv << $output_fields
 
-    workspaces.each do | this_workspace |
-        workspace_state = this_workspace["State"]
-        if workspace_state == "Open" then
+    artifact_types                             = ["Defect","HierarchicalRequirement",
+                                                            "PortfolioItem","Task","TestCase"]
+    closed_ws = 0
+    workspaces.each_with_index do | this_workspace, index_ws | #{
 
+        # starting point for debugging
+        # next if index_ws < 18
+
+        # found hang on this sub/ws
+        if @rally.rally_default_workspace.rally_object['Subscription']['_refObjectName'] == 'Rally - Sheri Quarfoot'
+            if this_workspace['Name'] == 'zDisney'
+                puts "(#{index_ws+1} of #{workspaces.length}) Skipping hang-prone workspace '#{this_workspace}'"
+                next
+            end
+        end
+
+        workspace_state = this_workspace["State"]
+        if workspace_state != "Open" then #{
+            puts "(#{index_ws+1} of #{workspaces.length}) Skipping closed workspace '#{this_workspace}'"
+            closed_ws += 1
+        else
+            puts "(#{index_ws+1} of #{workspaces.length}) Summarizing field definitions for workspace '#{this_workspace}'"
             this_workspace_name = this_workspace["Name"]
 
             workspace_config = {
                 :username    => $rally_username,
                 :password    => $rally_password,
+                :api_key     => $rally_api_key,
                 :workspace   => this_workspace_name,
                 :version     => $wsapi_version
             }
             
             rally_workspace_connection = RallyAPI::RallyRestJson.new(workspace_config)
 
-            artifact_types                             = ["Defect","HierarchicalRequirement",
-                                                            "PortfolioItem","Task","TestCase"]
-            attribute_symbol_by_type = {}
-            attribute_symbol_by_type["BOOLEAN"]        = :boolean
-            attribute_symbol_by_type["DATE"]           = :date
-            attribute_symbol_by_type["DECIMAL"]        = :decimal
-            attribute_symbol_by_type["DROPDOWN"]       = :dropdown
-            attribute_symbol_by_type["INTEGER"]        = :integer
-            attribute_symbol_by_type["STRING"]         = :string
-            attribute_symbol_by_type["TEXT"]           = :text
-            attribute_symbol_by_type["WEB_LINK"]       = :weblink
-
-            artifact_hash = {}
-
-            puts "Summarizing field definitions for workspace: #{this_workspace_name}..."
-
-            artifact_types.each do | this_type |
+            artifact_types.each do | this_type | #{
+                puts "\tProcessing artifact type: #{this_type}"
 
                 typedef_query                          = RallyAPI::RallyQuery.new()
                 typedef_query.type                     = :typedefinition
@@ -110,12 +133,12 @@ begin
                 type_definitions                       = rally_workspace_connection.find(typedef_query)
                 field_hash                             = {}
 
-                type_definitions.each do | this_typedef |
+                type_definitions.each do | this_typedef | #{
                     this_typedef.read
                     this_typedef_objectid              = this_typedef["ObjectID"]
                     this_typedef_name                  = this_typedef["Name"]
                     attribute_defs                     = this_typedef["Attributes"]
-                    attribute_defs.each do | this_attribute_def |
+                    attribute_defs.each do | this_attribute_def | #{
 
                         this_attribute_def_workspace   = this_typedef["Workspace"]
                         this_attribute_def_objectid    = this_attribute_def["ObjectID"]
@@ -130,11 +153,8 @@ begin
                             this_value = attribute_def_value['StringValue']
                             if !this_value.eql?("") then allowed_values.push(this_value) end
                         end
-                        if allowed_values.length > 0 && this_attribute_def_type == "STRING"
-                            this_attribute_def_type = "DROPDOWN"
-                        end
 
-                        this_attribute_symbol = attribute_symbol_by_type[this_attribute_def_type]
+                        this_attribute_def_type = this_attribute_def['RealAttributeType']
 
                         field_hash[this_attribute_def['ElementName']] = {
                             "type" => this_attribute_def_type,
@@ -142,12 +162,16 @@ begin
                         }
                         allowed_values_string = allowed_values.to_s.gsub("\"","")
 
+                        if this_type == "HierarchicalRequirement" then
+                            this_type = "UserStory"
+                        end
+
                         output_string              = "#{this_attribute_def_workspace}#{$my_delim}"
                         output_string              += "#{this_type}#{$my_delim}"
                         output_string              += "#{this_typedef_objectid}#{$my_delim}"
                         output_string              += "#{this_attribute_def_objectid}#{$my_delim}"
                         output_string              += "#{this_attribute_def_name}#{$my_delim}"
-                        output_string              += "#{this_attribute_symbol}#{$my_delim}"
+                        output_string              += "#{this_attribute_def['RealAttributeType']}#{$my_delim}"
                         output_string              += "#{this_attribute_def_hidden}#{$my_delim}"
                         output_string              += "#{this_attribute_def_required}#{$my_delim}"
                         output_string              += "#{this_attribute_def_iscustom}#{$my_delim}"
@@ -159,7 +183,7 @@ begin
                         output_record              << this_typedef_objectid
                         output_record              << this_attribute_def_objectid
                         output_record              << this_attribute_def_name
-                        output_record              << this_attribute_symbol
+                        output_record              << this_attribute_def['RealAttributeType']
                         output_record              << this_attribute_def_hidden
                         output_record              << this_attribute_def_required
                         output_record              << this_attribute_def_iscustom
@@ -180,15 +204,14 @@ begin
                             # puts output_string
                             summary_csv << output_record
                         end
-                    end
-                end
-                artifact_hash[this_type] = field_hash
-            end
-        end
-        rally_workspace_connection = nil
+                    end #} of 'attribute_defs.each do | this_attribute_def |'
+                end #} of 'type_definitions.each do | this_typedef |'
+            end #} of 'artifact_types.each do | this_type |'
+        end #} of 'if workspace_state == "Open" then'
+    end #} of 'workspaces.each do | this_workspace |'
 
-    end
-
+    puts "Ignored '#{closed_ws}' closed workspaces."
+    puts "Output file: '#{$output_filename}'"
     puts "Done!"
 
 end
