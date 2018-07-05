@@ -4,7 +4,7 @@ $rally_username              =  "user@company.com"
 $rally_password              =  "t0p$3cr3t"
 $rally_api_key               =  '_pX.......................................nM'
 $rally_workspace             =  "My Workspace"
-$wsapi_version               =  "v.20"
+$wsapi_version               =  "v2.0"
 
 $my_delim                    = ","
 
