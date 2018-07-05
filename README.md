@@ -4,7 +4,8 @@ Rally-Export-FieldDefinitions
 
 A simple Ruby Script that uses rally_api to query Field attributes for all Types in a specified Rally Workspace.
 
-![Rally-Export-CustomFields](https://raw.githubusercontent.com/markwilliams970/Rally-Export-FieldDefinitions/master/img/screenshot1.png)
+Master repo: ![Rally-Export-CustomFields](https://raw.githubusercontent.com/markwilliams970/Rally-Export-FieldDefinitions/master/img/screenshot1.png)
+My repo:     ![Rally-Export-CustomFields](https://github.com/RallyTechServices/Rally-Export-FieldDefinitions-JP/blob/master/img/screenshot1.png)
 
 Requirements:
 
