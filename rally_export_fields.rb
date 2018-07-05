@@ -25,7 +25,7 @@ require 'csv'
 $rally_url                                     =  "https://rally1.rallydev.com"
 $rally_username                                =  "user@company.com"
 $rally_password                                =  "topsecret"
-$rally_api_key                                 =  '_pX.......................................nM'
+$rally_api_key                                 =  nil
 $rally_workspace                               =  "My Workspace"
 $wsapi_version                                 =  "v2.0"
 
@@ -50,8 +50,10 @@ begin
     puts "Connecting to Rally:"
     puts "\t  :base_url : #{config[:base_url]}"
     puts "\t  :username : #{config[:username]}"
-    hidden_apikey = config[:api_key][0..4] + config[:api_key][5..-5].gsub(/./,'.') + config[:api_key][-4,4]
-    puts "\t  :api_key  : #{hidden_apikey}"
+    if  !config[:api_key].nil? && !config[:api_key].empty?
+        hidden_apikey = config[:api_key][0..4] + config[:api_key][5..-5].gsub(/./,'.') + config[:api_key][-4,4]
+        puts "\t  :api_key  : #{hidden_apikey}"
+    end
     puts "\t  :workspace: #{config[:workspace]}"
     puts "\t  :version  : #{config[:version]}"
 
