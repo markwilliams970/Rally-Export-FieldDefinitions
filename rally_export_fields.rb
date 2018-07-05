@@ -29,7 +29,8 @@ $rally_api_key                                 =  nil
 $rally_workspace                               =  "My Workspace"
 $wsapi_version                                 =  "v2.0"
 
-$my_delim                                      = "\t"
+$my_delim                                      = ","
+$output_filename                               = "exported_field_definitions.csv"
 
 $file_encoding                                 = 'UTF-8'
 
