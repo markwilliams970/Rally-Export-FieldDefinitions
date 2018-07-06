@@ -4,8 +4,7 @@ Rally-Export-FieldDefinitions
 
 A simple Ruby Script that uses rally_api to query Field attributes for all Types in a specified Rally Workspace.
 
-Master repo: ![Rally-Export-CustomFields](https://raw.githubusercontent.com/markwilliams970/Rally-Export-FieldDefinitions/master/img/screenshot1.png)
-My repo:     ![Rally-Export-CustomFields](https://github.com/RallyTechServices/Rally-Export-FieldDefinitions-JP/blob/master/img/screenshot1.png)
+![Rally-Export-CustomFields](https://raw.githubusercontent.com/markwilliams970/Rally-Export-FieldDefinitions/master/img/screenshot1.png)
 
 Requirements:
 
@@ -38,5 +37,5 @@ Then run the script:
 
     ruby rally_export_fields.rb
 
-The script will by default prepare a Comma-Delimited text file that you can open with Excel,
+By default, the script will create a comma-delimited text file that you can open with Excel,
 delineating the Field definitions for your Rally Workspace.
