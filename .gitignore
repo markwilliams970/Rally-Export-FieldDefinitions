@@ -1,0 +1,4 @@
+my_vars.rb-hidden
+*.csv
+test*.txt
+Gemfile
